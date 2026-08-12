@@ -1,0 +1,25 @@
+# Web framework
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+
+# Settings / environment variables
+pydantic==2.9.2
+pydantic-settings==2.5.2
+email-validator==2.2.0      # required for Pydantic's EmailStr validation
+
+# Database
+sqlalchemy==2.0.35
+pymysql==1.1.1
+cryptography==43.0.1        # required by PyMySQL for auth plugins
+
+# Security
+python-jose[cryptography]==3.3.0   # JWT create/verify
+passlib[bcrypt]==1.7.4             # password hashing
+bcrypt==4.0.1                      # pinned: passlib 1.7.4 is incompatible with bcrypt>=4.1
+                                    # (bcrypt dropped the __about__ attribute passlib reads
+                                    # to detect its version, causing a runtime error)
+
+# Form/file support used by FastAPI internally for some request types
+python-multipart==0.0.9
+
+openpyxl==3.1.5
