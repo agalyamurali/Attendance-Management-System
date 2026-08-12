@@ -146,7 +146,6 @@ CREATE INDEX idx_attendance_date ON attendance (attendance_date);
 -- =====================================================================
 -- Seed data: one demo admin account
 -- Username: admin
--- Password: Admin@123   (plain text shown here ONLY for interview demo
 -- purposes — never store or log plain-text passwords in a real system)
 -- Hash generated via passlib/bcrypt — see backend/app/core/security.py
 -- =====================================================================
