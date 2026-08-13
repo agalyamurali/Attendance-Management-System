@@ -97,12 +97,13 @@ export default function AttendanceList() {
         <>
           <table className="table">
             <thead>
-              <tr>
+             <tr>
                 <th>Date</th>
                 <th>Employee</th>
                 <th>Check-In</th>
                 <th>Check-Out</th>
                 <th>Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -118,6 +119,11 @@ export default function AttendanceList() {
                   <td>{rec.check_out || "—"}</td>
                   <td>
                     <StatusBadge status={rec.status} />
+                  </td>
+                  <td className="table-actions">
+                    <Link to={`/attendance/${rec.id}/edit`}>
+                      {rec.check_in && !rec.check_out ? "Add Check-Out" : "Edit"}
+                    </Link>
                   </td>
                 </tr>
               ))}

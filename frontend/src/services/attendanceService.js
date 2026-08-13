@@ -5,6 +5,24 @@ export async function markAttendance(payload) {
   return response.data;
 }
 
+export async function getAttendance(id) {
+  const response = await axiosClient.get(`/api/attendance/${id}`);
+  return response.data;
+}
+
+/**
+ * Updates an existing attendance record — the way to add or correct a
+ * check_out time after the fact (e.g. employee was marked PRESENT with
+ * just a check_in in the morning; call this later with check_out set
+ * once they actually leave). A second markAttendance() call for the
+ * same employee+date is correctly rejected as a duplicate — this is
+ * the endpoint for editing that same record instead.
+ */
+export async function updateAttendance(id, payload) {
+  const response = await axiosClient.put(`/api/attendance/${id}`, payload);
+  return response.data;
+}
+
 export async function listAttendance(params) {
   const response = await axiosClient.get("/api/attendance", { params });
   return response.data; // { data, total, page, page_size }

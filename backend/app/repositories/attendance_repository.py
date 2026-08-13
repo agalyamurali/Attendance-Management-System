@@ -41,6 +41,11 @@ def create(db: Session, attendance: Attendance) -> Attendance:
     db.refresh(attendance)
     return attendance
 
+def save(db: Session, attendance: Attendance) -> Attendance:
+    """Persist changes to an already-loaded, already-modified Attendance instance."""
+    db.commit()
+    db.refresh(attendance)
+    return attendance
 
 def list_attendance(
     db: Session,

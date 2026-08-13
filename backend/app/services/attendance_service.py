@@ -1,6 +1,6 @@
 """
-Attendance service — business rules for marking, viewing, and
-exporting attendance.
+Attendance service — business rules for marking, viewing, updating,
+and exporting attendance.
 
 Rules enforced here (per the confirmed spec):
     1. Employee must exist                         -> NotFoundException
@@ -9,10 +9,11 @@ Rules enforced here (per the confirmed spec):
        (checked here for a clean error message; the DB UNIQUE
        constraint in database/init.sql is the real race-condition-safe
        guarantee — see Phase 2 "defense in depth" reasoning)
-    4. check_out >= check_in, and check-in/check-out requirements per
-       status                                        -> enforced in the
-       Pydantic schema (AttendanceCreate), not here, since it needs no
-       database lookup — pure request-shape validation belongs there.
+    4. check_out >= check_in, attendance_date not in the future, and
+       check-in/check-out requirements per status  -> enforced in the
+       Pydantic schema (AttendanceCreate / AttendanceUpdate), not
+       here, since these need no database lookup — pure request-shape
+       validation belongs there.
 """
 
 from datetime import date
@@ -26,6 +27,7 @@ from app.schemas.attendance import (
     AttendanceCreate,
     AttendanceResponse,
     AttendanceSummaryResponse,
+    AttendanceUpdate,
 )
 
 
@@ -80,6 +82,34 @@ def get_attendance(db: Session, attendance_id: int) -> AttendanceResponse:
     if attendance is None:
         raise NotFoundException(f"Attendance record with id {attendance_id} not found")
     return _to_response(attendance)
+
+
+def update_attendance(db: Session, attendance_id: int, payload: AttendanceUpdate) -> AttendanceResponse:
+    """
+    Correct or complete an existing attendance record — most commonly,
+    adding check_out later in the day after the employee was already
+    marked PRESENT with just a check_in that morning.
+
+    employee_id and attendance_date are not touched here (they're not
+    part of AttendanceUpdate) — this is deliberately "edit this record"
+    rather than "move this record to a different employee/date." The
+    duplicate-attendance and employee-active rules were already
+    satisfied when the record was originally created, so they are not
+    re-checked here; only the check-in/check-out-vs-status rule
+    applies, since that's the one thing that can become invalid purely
+    from the edit itself (e.g. changing status to ABSENT while a
+    check_in is still present).
+    """
+    attendance = attendance_repository.get_by_id(db, attendance_id)
+    if attendance is None:
+        raise NotFoundException(f"Attendance record with id {attendance_id} not found")
+
+    attendance.check_in = payload.check_in
+    attendance.check_out = payload.check_out
+    attendance.status = payload.status
+
+    saved = attendance_repository.save(db, attendance)
+    return _to_response(saved)
 
 
 def list_attendance(

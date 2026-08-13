@@ -10,6 +10,7 @@ import EmployeeForm from "./pages/employees/EmployeeForm";
 import EmployeeDetails from "./pages/employees/EmployeeDetails";
 import AttendanceList from "./pages/attendance/AttendanceList";
 import MarkAttendance from "./pages/attendance/MarkAttendance";
+import EditAttendance from "./pages/attendance/EditAttendance";
 import EmployeeAttendanceHistory from "./pages/attendance/EmployeeAttendanceHistory";
 
 export default function App() {
@@ -33,6 +34,7 @@ export default function App() {
 
               <Route path="/attendance" element={<AttendanceList />} />
               <Route path="/attendance/mark" element={<MarkAttendance />} />
+              <Route path="/attendance/:id/edit" element={<EditAttendance />} />
               <Route
                 path="/attendance/history/:employeeId"
                 element={<EmployeeAttendanceHistory />}

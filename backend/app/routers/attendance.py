@@ -1,6 +1,6 @@
 """
-Attendance router — HTTP layer for marking, viewing, and exporting
-attendance. All routes require authentication.
+Attendance router — HTTP layer for marking, viewing, updating, and
+exporting attendance. All routes require authentication.
 """
 
 from datetime import date
@@ -17,6 +17,7 @@ from app.schemas.attendance import (
     AttendanceListResponse,
     AttendanceResponse,
     AttendanceSummaryResponse,
+    AttendanceUpdate,
 )
 from app.services import attendance_service, export_service
 
@@ -34,8 +35,14 @@ def mark_attendance(payload: AttendanceCreate, db: Session = Depends(get_db)):
 
     Validation, in order: employee must exist (404), employee must be
     ACTIVE (422), no duplicate for that employee+date (409), and
-    check-in/check-out requirements depend on status (422, enforced by
-    the request schema — see AttendanceCreate.validate_check_in_out_against_status).
+    check-in/check-out requirements depend on status, plus
+    attendance_date cannot be in the future (422, both enforced by the
+    request schema — see AttendanceCreate in app/schemas/attendance.py).
+
+    To add or correct a check-out time (or anything else) on a record
+    that already exists, use PUT /api/attendance/{id} instead of
+    calling this again — a second POST for the same employee/date will
+    correctly be rejected as a duplicate (409).
     """
     return attendance_service.mark_attendance(db, payload)
 
@@ -114,3 +121,31 @@ def export_attendance(
 def employee_attendance_history(employee_id: int, db: Session = Depends(get_db)):
     """Full attendance history for one employee, most recent first. 404 if employee doesn't exist."""
     return attendance_service.employee_attendance_history(db, employee_id)
+
+
+# NOTE: this generic /{attendance_id} route is registered LAST, after
+# every other more specific literal path (/summary, /export,
+# /employee/{employee_id}). FastAPI matches routes in registration
+# order — if this were declared earlier, a request to /export would
+# incorrectly match here first, with "export" parsed as attendance_id.
+
+
+@router.get("/{attendance_id}", response_model=AttendanceResponse)
+def get_attendance(attendance_id: int, db: Session = Depends(get_db)):
+    """Fetch a single attendance record by id. 404 if not found."""
+    return attendance_service.get_attendance(db, attendance_id)
+
+
+@router.put("/{attendance_id}", response_model=AttendanceResponse)
+def update_attendance(attendance_id: int, payload: AttendanceUpdate, db: Session = Depends(get_db)):
+    """
+    Update an existing attendance record — status, check_in, and/or
+    check_out. This is how a check_out time gets added after the fact:
+    mark PRESENT with just check_in in the morning (POST), then call
+    this endpoint later in the day with check_out filled in.
+
+    employee_id and attendance_date cannot be changed here (see
+    AttendanceUpdate). 404 if the record doesn't exist; 422 if the
+    check-in/check-out values don't match the requested status.
+    """
+    return attendance_service.update_attendance(db, attendance_id, payload)
